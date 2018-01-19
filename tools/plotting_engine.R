@@ -11,6 +11,8 @@ library(mclust)
 library(factoextra)
 library(ggplot2)
 library(ggpmisc)
+library(forcats)
+source("tools/support_tools.R")
 
 # ----------------------------------------------------------------------------
 # Data Processing
@@ -67,7 +69,8 @@ region_summarizer_engine <- function(data_frame, region_col, survey_qs,
 
 region_summarizer <- function(data_frame, region_col, survey_qs, weights=NULL, ...){
     #
-    #
+    # region_col: one of: country_ (global), state_ (US States).
+    # survey_qs: allowed survey questions.
     # weights: a list of column names (keys), where the values
     #          are scalars on [0, 1] which can be used to use
     #          to reweight the importance of the survey questions.
@@ -85,6 +88,11 @@ region_summarizer <- function(data_frame, region_col, survey_qs, weights=NULL, .
             region_summary_df[c] <- weights[[c]] * region_summary_df[c]
         }
     }
+    
+    # if (region_col == "state_"){
+    #     region_summary_df$state_ <- hrf_to_underscore(region_summary_df$state_)
+    # }
+    
     return(region_summary_df)
 }
 
@@ -92,16 +100,13 @@ region_summarizer <- function(data_frame, region_col, survey_qs, weights=NULL, .
 # Clustering
 # ----------------------------------------------------------------------------
 
-gmm_cluster <- function(region_summary_df, region_col,
-                        survey_qs, G=1:4, ...){
+gmm_cluster <- function(region_summary_df, G=1:9){
     # Get a summary of the `data_frame` againt `region_col`,
     # for some subset of survey questions (`survey_qs`).
     # Then generate a GMM model of the distances between this 
     # aggregated data, with `G` clusters.
     
     # region_summary_df: the output of `region_summarizer()`.
-    # region_col: one of: country_ (global), state_ (US States).
-    # survey_qs: allowed survey questions.
     # G: number of clusters in to use in the model.
     
     # Convert `region_summary_df` into a matrix ---
@@ -120,18 +125,14 @@ gmm_cluster <- function(region_summary_df, region_col,
 }
 
 
-gmm_plotter <- function(region_summary_df, region_col, survey_qs,
-                        title="Clustering Plot", ...){
+gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
     # gmm_plotter(survey, region_col="country_", survey_qs=bool_cols)
     
-    # Process Data and Generate the model
-    model <- gmm_cluster(region_summary_df=region_summary_df,
-                         region_col=region_col,
-                         survey_qs=survey_qs,
-                         ...)
+    # Process Data and learn the model
+    model <- gmm_cluster(region_summary_df=region_summary_df, ...)
 
     # Build the plot
-    plot_static <- 
+    static_plot <- 
         fviz_mclust(model, ellipse.level=0, repel=TRUE) +
         theme_minimal() +
         ggtitle(title) +
@@ -140,15 +141,15 @@ gmm_plotter <- function(region_summary_df, region_col, survey_qs,
               plot.subtitle=element_blank())
     
     # Update x and y labels
-    plot_static <-
-        plot_static +
+    static_plot <-
+        static_plot +
         labs(x=sub("Dim1 \\(", "Principal Component 1 (Var. Explained = ",
-                   plot_static$labels$x),
+                   static_plot$labels$x),
              y=sub("Dim2 \\(", "Principal Component 2 (Var. Explained = ",
-                   plot_static$labels$y)
+                   static_plot$labels$y)
         )
     
-    return(plot_static)
+    return(static_plot)
 }
 
 
@@ -158,67 +159,45 @@ gmm_plotter <- function(region_summary_df, region_col, survey_qs,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
+                                 title="Summary Bar Plot"){
+    #
+    #
+    #
+    # region_summary_df <- region_summarizer(survey, region_col="state_", survey_qs=bool_cols)
+    # summary_stat_plotter(region_summary_df, region_subset=c("California", "New York"))
+    
+    # Melt for plotting
+    region_summary_df_melt <- 
+        region_summary_df %>%
+        melt(id="region") %>% 
+        rename(question=variable) %>% 
+        mutate(question=fct_rev(as.factor(as.character(question))))
+    
+    # Limit to subset
+    if (!is.null(region_subset)){
+        region_summary_df_melt <-
+            region_summary_df_melt %>% 
+            filter(region %in% region_subset)
+    }
+    
+    # Generate the plot
+    static_plot <- 
+        region_summary_df_melt %>% 
+        ggplot(aes(x=question, y=value, fill=region)) +
+        geom_bar(stat="identity") +
+        facet_wrap(~region) +
+        labs(y="\nProportion of Participants Who Responded Yes") +
+        coord_flip() +
+        ggtitle(title) +
+        theme_minimal() +
+        scale_y_continuous(breaks=seq(0, 1, 0.5)) +
+        theme(legend.position="none",
+              axis.title.y=element_blank(),
+              panel.spacing=unit(1, "lines"),
+              plot.title=element_text(hjust=0.5))
+    return(static_plot)
+}
 
 
 
