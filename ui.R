@@ -18,12 +18,9 @@ survey <- read_csv("data/survey_cln.csv")
 # Define list of Survey Quetions
 # ----------------------------------------------------------------------------
 
-# Note: column names that end with _ have been flagged
-# as not real survey questions (e.g., country of residence).
-
-survey_col_names <- colnames(survey)
-survey_questions <- survey_col_names[!grepl("_$", survey_col_names)]
-survey_questions_hrf <- sort(underscore_to_hrf(survey_questions))
+survey_questions_hrf <- underscore_to_hrf(survey_questions(survey))
+abbrevs <- abbreviate(survey_questions_hrf, minlength=1)
+survey_questions_hrf <- paste(survey_questions_hrf, " (", abbrevs, ")", sep="")
 
 # ----------------------------------------------------------------------------
 # Compute the Age Range
@@ -37,45 +34,66 @@ age_range <- range(survey$age_, na.rm=TRUE)
 
 shinyUI(
     fluidPage(
-    
-    # Application title
-    titlePanel("Tech. Workplace Mental Health Survey Explorer"),
-    
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            selectInput(
-                inputId="analysis_type",
-                label="Analysis",
-                choices=c("Clustering", "Bar Chart"),
-                selected="Clustering"
-            ),
-            selectInput(
-                inputId="region",
-                label="Region",
-                choices=c("Global", "USA"),
-                selected="Global"
-            ),
-            selectInput(
-                inputId="survey_questions",
-                label="Survey Questions",
-                choices=c('All', survey_questions_hrf),
-                selected='All',
-                multiple=TRUE
-            ),
-            sliderInput(
-                inputId="age_range",
-                label="Age Range",
-                min=age_range[1],
-                max=age_range[2],
-                value=age_range,
-                step=1
-            )
-        ),
+        # Application title
+        titlePanel("Tech. Workplace Mental Health Survey Explorer"),
         
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
+        # Sidebar with a slider input for number of bins 
+        sidebarLayout(
+            sidebarPanel(
+                selectInput(
+                    inputId="analysis_type",
+                    label="Analysis",
+                    choices=c("Clustering", "Summary Statistics"),
+                    selected="Clustering"
+                ),
+                selectInput(
+                    inputId="region",
+                    label="Region",
+                    choices=c("Global", "US"),
+                    selected="Global"
+                ),
+                selectInput(
+                    inputId="us_states",
+                    label="US States",
+                    choices="Auto",
+                    selected="Auto",
+                    multiple=TRUE
+                ),
+                sliderInput(
+                    inputId="age_range",
+                    label="Age Range",
+                    min=age_range[1],
+                    max=age_range[2],
+                    value=age_range,
+                    step=1
+                ),
+                selectInput(
+                    inputId="survey_qs",
+                    label="Survey Questions",
+                    choices=c("All", survey_questions_hrf),
+                    selected="All",
+                    multiple=TRUE
+                ),
+                helpText("Advanced Clustering Features"),
+                textInput(
+                    inputId="clustering_weights",
+                    label="Survey Questions Weighting",
+                    value="",
+                    placeholder="Weighting"
+                ),
+                helpText("Above, you can adjust the weight of the survey
+                         questions when clustering. For example, to increase
+                         the importance of Benifits (B) and reduce the importance
+                         of Care Options (CO), you can write a comma-seperated instruction,
+                         using the question's abbreviation such as 'B=1.5, CO=0.75'.
+                         Default weighting for all questions is 1. This input has absolutley *no* affect
+                         when computing summary statistics.")
+            ),
+            
+            # Show a plot of the generated distribution
+            mainPanel(
+                plotOutput("plot", height="500px")
+            )
         )
     )
-))
+)
