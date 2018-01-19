@@ -43,11 +43,40 @@ hrf_to_underscore <- function(vec, correction=c("_vs._", "_vs_")){
     return(hrf)
 }
 
+# ----------------------------------------------------------------------------
+# MISC
+# ----------------------------------------------------------------------------
+
+survey_questions <- function(survey, do_sort=TRUE){
+    # Get a list of survey questions in the `data_frame`
+    # Note: column names that end with _ have been flagged
+    # as not real survey questions (e.g., country of residence).
+    survey_col_names <- colnames(survey)
+    survey_questions <- survey_col_names[!grepl("_$", survey_col_names)]
+    if (do_sort){
+        survey_questions <- sort(survey_questions)
+    }
+    return(survey_questions)
+}
 
 
+name_value_swap <- function(named_vector){
+    old_names <- names(named_vector)
+    new_names <- as.vector(named_vector)
+    names(old_names) <- new_names
+    return(old_names)
+}
 
 
+named_vector_to_list <- function(named_vecotr){
+    # https://stackoverflow.com/a/46251794/4898004
+    out <- split(unname(named_vecotr), names(named_vecotr))
+    return(out)
+}
 
 
-
-
+cln_brackets <- function(vec){
+    # Ablate characters in bracets (inclusive).
+    # https://stackoverflow.com/a/24173271/4898004
+    return(gsub("\\s*\\([^\\)]+\\)", "", vec))
+}
