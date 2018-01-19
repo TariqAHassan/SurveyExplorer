@@ -33,7 +33,7 @@ get_valid_regions <- function(data_frame, region_col, min_observations){
 
 
 region_summarizer_engine <- function(data_frame, region_col, survey_qs,
-                                     min_observations=15, summary_func=mean){
+                                     min_observations=10, summary_func=mean){
     # Summarize a region (countries/global or US States).
     #
     # data_frame: a dataframe
@@ -72,8 +72,8 @@ region_summarizer <- function(data_frame, region_col, survey_qs, weights=NULL, .
     # region_col: one of: country_ (global), state_ (US States).
     # survey_qs: allowed survey questions.
     # weights: a list of column names (keys), where the values
-    #          are scalars on [0, 1] which can be used to use
-    #          to reweight the importance of the survey questions.
+    #          are scalars which can be used to use to reweight the
+    #          importance of the survey questions.
     #
     # Summarize ---
     region_summary_df <-
@@ -82,16 +82,12 @@ region_summarizer <- function(data_frame, region_col, survey_qs, weights=NULL, .
                                  survey_qs=survey_qs,
                                  ...)
     
-    # Apply Reweighting to columns ---
+    # Apply Reweighting to columns (if applicable) ---
     if (is.list(weights)){
         for (c in names(weights)){
             region_summary_df[c] <- weights[[c]] * region_summary_df[c]
         }
     }
-    
-    # if (region_col == "state_"){
-    #     region_summary_df$state_ <- hrf_to_underscore(region_summary_df$state_)
-    # }
     
     return(region_summary_df)
 }
@@ -163,7 +159,6 @@ summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
                                  title="Summary Bar Plot"){
     #
     #
-    #
     # region_summary_df <- region_summarizer(survey, region_col="state_", survey_qs=bool_cols)
     # summary_stat_plotter(region_summary_df, region_subset=c("California", "New York"))
     
@@ -198,12 +193,4 @@ summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
               plot.title=element_text(hjust=0.5))
     return(static_plot)
 }
-
-
-
-
-
-
-
-
 
