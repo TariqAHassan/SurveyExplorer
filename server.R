@@ -6,11 +6,16 @@
 
 library(shiny)
 source("tools/support_tools.R")
+source("tools/parsers.R")
 source("tools/plotting_engine.R")
 source("tools/shared_data.R")  # import min_observations
 
+# ----------------------------------------------------------------------------
+# Constants
+# ----------------------------------------------------------------------------
 
 DEFAULT_VALUES <- c('all', "auto")
+ERROR_MESSAGE <- "Insufficient Data. Try Broading your Query or Changing the Analysis."
 
 # ----------------------------------------------------------------------------
 # Read in Complete (Cleaned) Survey Data
@@ -29,64 +34,30 @@ states <- states[!is.na(states)]
 survey_questions_underscore <- survey_questions(survey)
 
 # ----------------------------------------------------------------------
-# Tools to Parse the Clustering Weights
-# ----------------------------------------------------------------------
-
-# Generate a list of the form:
-# Key = Abbreviation; Value = "Full Name".
-# This manipulation is non-trivial.
-question_abbrevs_list <-
-    survey_questions_underscore %>% 
-    underscore_to_hrf() %>% 
-    abbreviate(minlength=1) %>%
-    name_value_swap() %>% 
-    hrf_to_underscore() %>% 
-    named_vector_to_list()
-
-
-weighting_string_parser <- function(string){
-    # weighting_string_parser("B=1, C=10, CO=.83")
-    
-    if (nchar(trimws(string)) == 0){
-        return(NULL)
-    }
-    
-    sub_sec <- function(sub){
-        split <- strsplit(toupper(trimws(sub)), "=")[[1]]
-        abbrev <- question_abbrevs_list[[split[1]]]
-        out <- list(split[2]); names(out) <- abbrev
-        return(out)
-    }
-    
-    parsed_weights <-
-        purrr::map(strsplit(string, ",")[[1]], sub_sec) %>% 
-        unlist() %>% 
-        named_vector_to_list() %>% 
-        lapply(as.numeric)
-        
-    return(parsed_weights)
-}
-
-
-# ----------------------------------------------------------------------
 # General Support Functions
 # ----------------------------------------------------------------------
 
 
 titler <- function(input){
+    # Generate the plot's title
     vec <- c(input$region, input$analysis_type, "for",
              input$age_range[1], 'to', input$age_range[2], "year olds")
     return(paste(vec, collapse=" "))
 }
 
 
-default_remover <- function(default){
-    return(default[!(tolower(default) %in% DEFAULT_VALUES)])
+default_remover <- function(vec){
+    # Remove DEFAULT_VALUES (all and auto) from `vec`.
+    return(vec[!(tolower(vec) %in% DEFAULT_VALUES)])
 }
 
 
-state_hander <- function(input, default, summary_stat, top_n=3){
+state_hander <- function(input, default, summary_stat, top_n=6){
     us_states <- input$us_states
+    
+    validate(
+        need(length(input$us_states) > 0, ERROR_MESSAGE)
+    )
     
     if (tolower(us_states) == 'auto'){
         if (summary_stat){
@@ -102,6 +73,7 @@ state_hander <- function(input, default, summary_stat, top_n=3){
 
 
 allowed_states <- function(input){
+    # 
     age_filter_survey_df <-
         survey %>%
         filter(age_ >= input$age_range[1],
@@ -118,7 +90,12 @@ allowed_states <- function(input){
 
 
 question_handler <- function(input, all){
-    # Handle cases where `input == 'all'`.
+    
+    validate(
+        need(length(input) > 0, ERROR_MESSAGE)
+    )
+    
+    # Handle cases where `input == 'All'`.
     if (tolower(input) == 'all'){
         out <- all
     } else {
@@ -126,6 +103,18 @@ question_handler <- function(input, all){
     }
     return(sort(default_remover(out)))
 }
+
+
+enough_data_for_plotting_checker <- function(region_summary_df, summary_stat){
+    # Clustering requires more than one region.
+    if (!summary_stat){
+        validate(need(nrow(region_summary_df) > 1, ERROR_MESSAGE))
+    # Bar plots require at least one region.
+    } else {
+        validate(need(nrow(region_summary_df) > 0, ERROR_MESSAGE))
+    }
+}
+
 
 # ----------------------------------------------------------------------------
 # Sever Logic
@@ -139,22 +128,32 @@ shinyServer(
             renderUI({
                 selectInput(
                     inputId="us_states",
-                    label="Included US States",
+                    label="US States to Include",
                     choices=c("Auto", allowed_states(input)),
                     selected="Auto",
                     multiple=TRUE
                 )
-        })
+            }
+        )
         
         output$plot <-
             renderPlot({
+                
                 summary_stat <- input$analysis_type=="Summary Statistics"
-                allowed_states <- state_hander(input=input,
-                                               default=states,
+                allowed_states <- state_hander(input=input, default=states,
                                                summary_stat=summary_stat)
                 questions <- question_handler(input=hrf_to_underscore(cln_brackets(input$survey_qs)),
                                               all=survey_questions_underscore)
                 
+                # Ablate weight alterations if Rendering Summary Statistics.
+                if (summary_stat) {
+                    weights <- NULL
+                } else {
+                    weights <- weighting_string_parser(input$clustering_weights,
+                                                       survey_questions_underscore)
+                }
+                
+                # Filter the data
                 region_summary_df <-
                     survey %>%
                     filter(age_ >= input$age_range[1],
@@ -163,9 +162,23 @@ shinyServer(
                     region_summarizer(
                         region_col=region_mapping[[input$region]],
                         survey_qs=questions,
-                        weights=weighting_string_parser(input$clustering_weights))
+                        weights=weights)
                 
-                plot <- gmm_plotter(region_summary_df, title=titler(input))
+                # Check enough data remains for plotting
+                enough_data_for_plotting_checker(region_summary_df, summary_stat)
+                
+                # Generate Plot
+                plot_func <- if (summary_stat) summary_stat_plotter else gmm_plotter
+                plot <- plot_func(region_summary_df, title=titler(input))
+                
+                # Check a plot was actually generated
+                validate(
+                    need(!is.null(plot), ERROR_MESSAGE)
+                )
+                
+                # Show plot.
                 plot
-            })
-})
+            }
+        )
+    }
+)
