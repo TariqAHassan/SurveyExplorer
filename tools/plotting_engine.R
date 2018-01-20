@@ -13,13 +13,14 @@ library(ggplot2)
 library(ggpmisc)
 library(forcats)
 source("tools/support_tools.R")
+source("tools/shared_data.R")  # import min_observations
 
 # ----------------------------------------------------------------------------
 # Data Processing
 # ----------------------------------------------------------------------------
 
 
-get_valid_regions <- function(data_frame, region_col, min_observations){
+get_valid_regions <- function(data_frame, region_col){
     # Get region in data_frame that have
     # a min. number of obervations when grouped.
     valid_regions <- 
@@ -33,13 +34,12 @@ get_valid_regions <- function(data_frame, region_col, min_observations){
 
 
 region_summarizer_engine <- function(data_frame, region_col, survey_qs,
-                                     min_observations=10, summary_func=mean){
+                                     summary_func=mean){
     # Summarize a region (countries/global or US States).
     #
     # data_frame: a dataframe
     # region_col: one of: country_ (global), state_ (US States).
     # survey_qs: allowed survey questions.
-    # min_observations: min. number of required observations. Defaults to 10.
     # summary_func: summary statistic to compute (expected have an `na.rm` param).
     #               Defaults to `mean()`.
     
@@ -49,8 +49,7 @@ region_summarizer_engine <- function(data_frame, region_col, survey_qs,
     
     # Find thoe region that have `min_observations`.
     valid_regions <- get_valid_regions(data_frame=data_frame,
-                                       region_col=region_col,
-                                       min_observations=min_observations)
+                                       region_col=region_col)
     
     # Add a "region" column
     data_frame['region'] <- data_frame[region_col]
