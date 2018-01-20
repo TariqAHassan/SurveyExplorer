@@ -16,6 +16,14 @@ source("tools/support_tools.R")
 source("tools/shared_data.R")  # import min_observations
 
 # ----------------------------------------------------------------------------
+# Themes
+# ----------------------------------------------------------------------------
+
+text_size_theme <-
+    theme(axis.title=element_text(size=14),
+          plot.title = element_text(size=15, face="bold"))
+
+# ----------------------------------------------------------------------------
 # Data Processing
 # ----------------------------------------------------------------------------
 
@@ -114,7 +122,12 @@ gmm_cluster <- function(region_summary_df, G=1:9){
     
     # Compute distances between vectors and compute GMM ---
     region_summary_mtx_dist <- dist(region_summary_mtx)
-    gmm_cluster_model <- Mclust(region_summary_mtx_dist, G=G)
+    
+    gmm_cluster_model <- tryCatch({
+        return(Mclust(region_summary_mtx_dist, G=G))
+    }, error = function(e) {
+        return(NULL)
+    })
     
     return(gmm_cluster_model)
 }
@@ -125,6 +138,10 @@ gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
     
     # Process Data and learn the model
     model <- gmm_cluster(region_summary_df=region_summary_df, ...)
+    
+    if (is.null(model)){
+        return(model)
+    }
 
     # Build the plot
     static_plot <- 
@@ -133,7 +150,8 @@ gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
         ggtitle(title) +
         theme(legend.position="none",
               plot.title=element_text(hjust=0.5),
-              plot.subtitle=element_blank())
+              plot.subtitle=element_blank()) +
+        text_size_theme
     
     # Update x and y labels
     static_plot <-
@@ -154,8 +172,7 @@ gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
 
 
 
-summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
-                                 title="Summary Bar Plot"){
+summary_stat_plotter <- function(region_summary_df, title="Summary Bar Plot"){
     #
     #
     # region_summary_df <- region_summarizer(survey, region_col="state_", survey_qs=bool_cols)
@@ -166,14 +183,11 @@ summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
         region_summary_df %>%
         melt(id="region") %>% 
         rename(question=variable) %>% 
+        # Convert the underscore-seperated questions in 
+        # `region_summary_df` into a human readable format.
+        mutate(question=underscore_to_hrf(question)) %>% 
+        # Convert questions into a factor, leveled from A-Z.
         mutate(question=fct_rev(as.factor(as.character(question))))
-    
-    # Limit to subset
-    if (!is.null(region_subset)){
-        region_summary_df_melt <-
-            region_summary_df_melt %>% 
-            filter(region %in% region_subset)
-    }
     
     # Generate the plot
     static_plot <- 
@@ -189,7 +203,7 @@ summary_stat_plotter <- function(region_summary_df, region_subset=NULL,
         theme(legend.position="none",
               axis.title.y=element_blank(),
               panel.spacing=unit(1, "lines"),
-              plot.title=element_text(hjust=0.5))
+              plot.title=element_text(hjust=0.5)) +
+        text_size_theme
     return(static_plot)
 }
-
