@@ -1,0 +1,1 @@
+min_observations = 10
