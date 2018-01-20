@@ -29,6 +29,13 @@ survey_questions_hrf <- paste(survey_questions_hrf, " (", abbrevs, ")", sep="")
 age_range <- range(survey$age_, na.rm=TRUE)
 
 # ----------------------------------------------------------------------------
+# Compute the Age Range
+# ----------------------------------------------------------------------------
+
+states <- unique(survey$state_)
+states <- sort(states[!is.na(states)])
+
+# ----------------------------------------------------------------------------
 # Define the UI.
 # ----------------------------------------------------------------------------
 
@@ -52,13 +59,7 @@ shinyUI(
                     choices=c("Global", "US"),
                     selected="Global"
                 ),
-                selectInput(
-                    inputId="us_states",
-                    label="US States",
-                    choices="Auto",
-                    selected="Auto",
-                    multiple=TRUE
-                ),
+                htmlOutput("us_states"),
                 sliderInput(
                     inputId="age_range",
                     label="Age Range",
