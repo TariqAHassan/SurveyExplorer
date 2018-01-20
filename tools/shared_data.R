@@ -1,1 +1,1 @@
-min_observations = 10
+min_observations <- 10
