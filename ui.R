@@ -61,8 +61,9 @@ shinyUI(
                     selected="Global"
                 ),
                 htmlOutput("us_states"),
-                helpText("'Auto' limits the number of states shown when displaying Summary Statistics
-                          to a small subset. This can be changed by manually selecting the states of interest."),
+                helpText("'Auto' limits the number of states shown to a random subset when displaying
+                         Summary Statistics and Region = US. This can be changed by manually selecting
+                         the states of interest."),
                 sliderInput(
                     inputId="age_range",
                     label="Age Range",
