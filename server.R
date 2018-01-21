@@ -53,6 +53,7 @@ default_remover <- function(vec){
 
 
 state_hander <- function(input, default, summary_stat, top_n=6){
+    # Handle input from the US State selector
     us_states <- input$us_states
     
     validate(
@@ -73,7 +74,8 @@ state_hander <- function(input, default, summary_stat, top_n=6){
 
 
 allowed_states <- function(input){
-    # 
+    # Get a vector of allowed states, based on the 
+    # input (ensures stats with insufficent data are hidden).
     age_filter_survey_df <-
         survey %>%
         filter(age_ >= input$age_range[1],
