@@ -91,7 +91,7 @@ ui <-
     ),
     dashboardBody(
         # Boxes need to be put in a row (or column)
-        box(plotOutput("plot", height="625px"), width=12),
+        box(plotOutput("plot", height="650px"), width=12),
         box(title = "Survey Question Descriptions", 
             solidHeader = TRUE,
             width=12,
