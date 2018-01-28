@@ -10,6 +10,9 @@ source("tools/parsers.R")
 source("tools/plotting_engine.R")
 source("tools/shared_data.R")  # import min_observations
 
+library(shiny)
+library(shinydashboard)
+
 # ----------------------------------------------------------------------------
 # Constants
 # ----------------------------------------------------------------------------
@@ -33,9 +36,9 @@ states <- states[!is.na(states)]
 
 survey_questions_underscore <- survey_questions(survey)
 
-# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # General Support Functions
-# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 
 titler <- function(input){
