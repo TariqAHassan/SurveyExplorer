@@ -147,6 +147,9 @@ only_two_questions_clustering_plot <- function(region_summary_df, model){
     colnames(data_frame)[2:3] <- c('x', 'y')
 
     # Plot
+    # Note: color=cluster, shape=cluster because this is 
+    # what `fviz_mclust()` does
+    # (and fviz_mclust() is just too complex for me to replicate quickly)
     static_plot <-
         data_frame %>%
         ggplot(aes(x, y, color=cluster, shape=cluster, label=region)) +
