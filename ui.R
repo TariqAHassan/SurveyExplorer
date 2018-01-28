@@ -6,7 +6,7 @@
 
 library(shiny)
 library(readr)
-library(shinythemes)
+library(shinyWidgets)
 library(shinydashboard)
 source("tools/support_tools.R")
 
@@ -69,12 +69,14 @@ ui <-
                 value=age_range,
                 step=1
             ),
-            selectInput(
+            pickerInput(
                 inputId="survey_qs",
                 label="Survey Questions to Include",
-                choices=c("All", survey_questions_hrf),
-                selected="All",
-                multiple=TRUE
+                choices=survey_questions_hrf,
+                selected=survey_questions_hrf,
+                multiple=TRUE,
+                options=list("actions-box"=TRUE, size=10,
+                             "selected-text-format" = 'count > 3')
             ),
             helpText("> Full Questions located below graph."),
             

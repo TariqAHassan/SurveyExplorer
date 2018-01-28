@@ -11,13 +11,13 @@ source("tools/plotting_engine.R")
 source("tools/shared_data.R")  # import min_observations
 
 library(shiny)
+library(shinyWidgets)
 library(shinydashboard)
 
 # ----------------------------------------------------------------------------
 # Constants
 # ----------------------------------------------------------------------------
 
-DEFAULT_VALUES <- c('all', "auto")
 ERROR_MESSAGE <- "Insufficient Data. Try Broading your Query or Changing the Analysis."
 
 # ----------------------------------------------------------------------------
@@ -49,12 +49,6 @@ titler <- function(input){
 }
 
 
-default_remover <- function(vec){
-    # Remove DEFAULT_VALUES (all and auto) from `vec`.
-    return(vec[!(tolower(vec) %in% DEFAULT_VALUES)])
-}
-
-
 state_hander <- function(input, default, summary_stat, top_n=6){
     # Handle input from the US State selector
     us_states <- input$us_states
@@ -62,17 +56,7 @@ state_hander <- function(input, default, summary_stat, top_n=6){
     validate(
         need(length(input$us_states) > 0, ERROR_MESSAGE)
     )
-    
-    if (tolower(us_states) == 'auto'){
-        if (summary_stat){
-            out <- head(default, top_n)
-        } else {
-            out <- default
-        }
-    } else {
-        out <- default_remover(us_states)
-    }
-    return(sort(out))
+    return(sort(us_states))
 }
 
 
@@ -99,14 +83,7 @@ question_handler <- function(input, all){
     validate(
         need(length(input) > 0, ERROR_MESSAGE)
     )
-    
-    # Handle cases where `input == 'All'`.
-    if (tolower(input) == 'all'){
-        out <- all
-    } else {
-        out <- input
-    }
-    return(sort(default_remover(out)))
+    return(sort(input))
 }
 
 
@@ -131,12 +108,15 @@ shinyServer(
         
         output$us_states <-
             renderUI({
-                selectInput(
+                choices <- allowed_states(input)
+                pickerInput(
                     inputId="us_states",
                     label="US States to Include",
-                    choices=c("Auto", allowed_states(input)),
-                    selected="Auto",
-                    multiple=TRUE
+                    choices=choices,
+                    selected=choices,
+                    multiple=TRUE,
+                    options=list("actions-box"=TRUE, size=10,
+                                 "selected-text-format" = 'count > 3')
                 )
             }
         )
