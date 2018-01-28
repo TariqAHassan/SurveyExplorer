@@ -87,10 +87,14 @@ question_handler <- function(input){
 }
 
 
-enough_data_for_plotting_checker <- function(region_summary_df, summary_stat){
+enough_data_for_plotting_checker <- function(region_summary_df,
+                                             summary_stat, questions){
     # Clustering requires more than one region.
     if (!summary_stat){
         validate(need(nrow(region_summary_df) > 1, ERROR_MESSAGE))
+        # Require 2 or more questions for clustering
+        len_question_error_msg <- "Please select at least two questions when clustering."
+        validate(need(length(questions) > 1, len_question_error_msg))
     # Bar plots require at least one region.
     } else {
         validate(need(nrow(region_summary_df) > 0, ERROR_MESSAGE))
@@ -148,7 +152,9 @@ shinyServer(
                         weights=weights)
                 
                 # Check enough data remains for plotting
-                enough_data_for_plotting_checker(region_summary_df, summary_stat)
+                enough_data_for_plotting_checker(region_summary_df,
+                                                 summary_stat=summary_stat,
+                                                 questions=questions)
                 
                 # Generate Plot
                 plot_func <- if (summary_stat) summary_stat_plotter else gmm_plotter
