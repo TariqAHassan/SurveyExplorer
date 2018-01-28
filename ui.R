@@ -78,11 +78,11 @@ ui <-
                 options=list("actions-box"=TRUE, size=10,
                              "selected-text-format" = 'count > 3')
             ),
-            helpText("> Full Questions located below graph."),
+            helpText("> Full questions located below graph."),
             
             textInput(
                 inputId="clustering_weights",
-                label="Change Question Weighting During Clustering (Default is 1; Advanced)",
+                label="Advanced: Change Question Weighting During Clustering (Default is 1)",
                 value="",
                 placeholder="Example: B=1.5, CO=0.75"
             ),
