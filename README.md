@@ -32,7 +32,7 @@ on a familiar-looking 2D scatter plot.
 ### Additional
 
 In order to be show in either the clustering or summary statistics plots, regions (countries or US States)
-are required to have at least ten observations. Whether or not a region meets this threshold can
+are required to have at least fifteen observations. Whether or not a region meets this threshold can
 change as you filter the data (e.g., narrow the range of ages to include)
 
 ### Data Source
