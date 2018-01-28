@@ -49,7 +49,7 @@ titler <- function(input){
 }
 
 
-state_hander <- function(input, default, summary_stat, top_n=6){
+state_hander <- function(input){
     # Handle input from the US State selector
     us_states <- input$us_states
     
@@ -78,7 +78,7 @@ allowed_states <- function(input){
 }
 
 
-question_handler <- function(input, all){
+question_handler <- function(input){
     
     validate(
         need(length(input) > 0, ERROR_MESSAGE)
@@ -125,10 +125,8 @@ shinyServer(
             renderPlot({
                 
                 summary_stat <- input$analysis_type=="Summary Statistics"
-                allowed_states <- state_hander(input=input, default=states,
-                                               summary_stat=summary_stat)
-                questions <- question_handler(input=hrf_to_underscore(cln_brackets(input$survey_qs)),
-                                              all=survey_questions_underscore)
+                allowed_states <- state_hander(input=input)
+                questions <- question_handler(input=hrf_to_underscore(cln_brackets(input$survey_qs)))
                 
                 # Ablate weight alterations if Rendering Summary Statistics.
                 if (summary_stat) {
