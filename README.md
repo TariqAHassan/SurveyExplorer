@@ -27,7 +27,8 @@ where n is the number of regions). These distances are then used to learn a Gaus
 classify the countries / US States. This model is responsible for coloring the points. The position of the points
 are determined by performing a Principal Component Analysis (PCA). Using the two components which explain the most
 variance in the (distance) data, this high dimensional space (where each survey question is a dimension) can be summarized
-on a familiar-looking 2D scatter plot.
+on a familiar-looking 2D scatter plot. The only instance where PCA will not be performed, is when only two questions
+have been selected. In this case, the questions themselves will form the axes.
 
 ### Additional
 
