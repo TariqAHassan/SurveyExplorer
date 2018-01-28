@@ -12,6 +12,7 @@ library(factoextra)
 library(ggplot2)
 library(ggpmisc)
 library(forcats)
+library(ggrepel)
 source("tools/support_tools.R")
 source("tools/shared_data.R")  # import min_observations
 
@@ -133,21 +134,39 @@ gmm_cluster <- function(region_summary_df, G=1:9){
 }
 
 
-gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
-    # gmm_plotter(survey, region_col="country_", survey_qs=bool_cols)
-    
-    # Process Data and learn the model
-    model <- gmm_cluster(region_summary_df=region_summary_df, ...)
-    
-    if (is.null(model)){
-        return(model)
-    }
+only_two_questions_clustering_plot <- function(region_summary_df, model){
+    # Simply plot a scatter plot when there are only two dimensions.
+    data_frame <- region_summary_df
+    data_frame$cluster <- as.factor(model$classification)
 
-    # Build the plot
+    # Get Labels
+    xlabel <- underscore_to_hrf(colnames(data_frame)[2])
+    ylabel <- underscore_to_hrf(colnames(data_frame)[3])
+
+    # Make column names generic for plotting
+    colnames(data_frame)[2:3] <- c('x', 'y')
+
+    # Plot
+    static_plot <-
+        data_frame %>%
+        ggplot(aes(x, y, color=cluster, shape=cluster, label=region)) +
+        geom_point(size=2.25) +
+        geom_text_repel() +
+        labs(x=paste(xlabel, "(Proportion of Yes Responses)"),
+             y=paste(ylabel, "(Proportion of Yes Responses)")) +
+        theme_minimal() +
+        theme(legend.position = "none",
+              plot.title=element_text(hjust=0.5)) +
+        text_size_theme
+    return(static_plot)
+}
+
+
+more_than_two_questions_clustering_plot <- function(model){
+    # Use PCA when there are many dimensions.
     static_plot <- 
         fviz_mclust(model, ellipse.level=0, repel=TRUE) +
         theme_minimal() +
-        ggtitle(title) +
         theme(legend.position="none",
               plot.title=element_text(hjust=0.5),
               plot.subtitle=element_blank()) +
@@ -166,6 +185,38 @@ gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
 }
 
 
+gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
+    # Plot the GMM Clustering on a scatter plot.
+    # If the number of questions is two, simply use them as the x and y
+    # axes. Otherwie, use PCA and select the two component that explain
+    # the most variance, and use them as the axes.
+    
+    # Process Data and learn the model
+    model <- gmm_cluster(region_summary_df=region_summary_df, ...)
+    
+    if (is.null(model)){
+        return(model)
+    }
+    
+    # A. Simple scatter plot when there are only two questions.
+    if (ncol(region_summary_df) == 3){
+        # Three b/c regon + q1 + q2 = three columns.
+        static_plot <- only_two_questions_clustering_plot(region_summary_df,
+                                                          model=model)
+    # B. Use PCA when # of questions > two.
+    } else {
+        static_plot <- more_than_two_questions_clustering_plot(model)
+    }
+    
+    # Add title
+    static_plot <-
+        static_plot +
+        ggtitle(title)
+    
+    return(static_plot)
+}
+
+
 # ----------------------------------------------------------------------------
 # Bar Plots
 # ----------------------------------------------------------------------------
@@ -173,7 +224,7 @@ gmm_plotter <- function(region_summary_df, title="Clustering Plot", ...){
 
 
 summary_stat_plotter <- function(region_summary_df, title="Summary Bar Plot"){
-    #
+    # Plot Summary statistics with bar charts.
     #
     # region_summary_df <- region_summarizer(survey, region_col="state_", survey_qs=bool_cols)
     # summary_stat_plotter(region_summary_df, region_subset=c("California", "New York"))
@@ -195,7 +246,7 @@ summary_stat_plotter <- function(region_summary_df, title="Summary Bar Plot"){
         ggplot(aes(x=question, y=value, fill=region)) +
         geom_bar(stat="identity") +
         facet_wrap(~region) +
-        labs(y="\nProportion of Participants Who Responded Yes") +
+        labs(y="\nProportion of Yes Responses") +
         coord_flip() +
         ggtitle(title) +
         theme_minimal() +
