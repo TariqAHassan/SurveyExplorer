@@ -82,7 +82,7 @@ ui <-
             
             textInput(
                 inputId="clustering_weights",
-                label="Advanced: Change Question Weighting During Clustering (Default is 1)",
+                label="Advanced: Change Question Weighting During Clustering (default weighting is 1)",
                 value="",
                 placeholder="Example: B=1.5, CO=0.75"
             ),
@@ -112,7 +112,14 @@ ui <-
                 <li><b>Treatment (T)</b>: Have you sought treatment for a mental health condition?</li>
                 <li><b>Mental vs. Physical (MvP)</b>: Do you feel that your employer takes mental health as seriously as physical health?</li>
                 <li><b>Wellness Program (WP)</b>: Has your employer ever discussed mental health as part of an employee wellness program?</li>
-            </ul>")
+            </ul>
+            <br>
+            <b>Note</b>: If you select two quetion for clustering, they will be used to form the x and y axes.
+                         However, if you select more than two questions for clutering, a principal components analysis
+                         will be performed and the two components that explain the most variance will be used for the
+                         axes.
+             <br>
+             ")
         ),
         box(title = "More Information", 
             solidHeader = TRUE,
